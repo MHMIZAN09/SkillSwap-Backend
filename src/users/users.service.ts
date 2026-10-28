@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
@@ -89,12 +90,30 @@ export class UsersService {
   async findUserByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      omit: userOmitConfig,
+    });
+    return user;
+  }
+
+  // create user
+  async createUser(payload: CreateUserDto) {
+    const email = payload.email.trim().toLowerCase();
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
     });
 
-    if (!user) {
-      throw new ConflictException(`user with email ${email} already exists`);
+    if (existingUser) {
+      throw new ConflictException(`User with email ${email} already exists`);
     }
-    return user;
+
+    return this.prisma.user.create({
+      data: {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: email,
+        password: payload.password,
+      },
+      omit: userOmitConfig,
+    });
   }
 }
