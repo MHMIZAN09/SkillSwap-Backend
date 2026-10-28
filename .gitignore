@@ -1,3 +1,22 @@
+.agents
+.claude
+.windsurf
+
+/generated
+
+skills-lock.json
+
+
+
+
+
+
+
+
+
+
+
+
 # compiled output
 /dist
 /node_modules
@@ -57,3 +76,5 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+/generated/prisma
