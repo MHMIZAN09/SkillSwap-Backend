@@ -6,19 +6,37 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBasicAuth,
+  ApiBearerAuth,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { JwtAuthGuard } from '../auth/jwt-auth/jwt-auth.guard.js';
+import { Role } from '../generated/prisma/enums.js';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto.js';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
 @ApiTags('Users')
+@ApiBasicAuth()
+@ApiBearerAuth()
+@ApiCookieAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.USER)
+  @Get('all-users')
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Return all users list.' })
   async findAllUsers() {
@@ -106,6 +124,23 @@ export class UsersController {
       success: true,
       message: 'User details updated successfully',
       data: result,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile/me')
+  @ApiOperation({ summary: 'Get current user details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user details retrieved successfully.',
+  })
+  async getCurrentUser(@CurrentUser('sub') userId: string) {
+    const user = await this.usersService.findUserById(userId);
+    return {
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'Current user retrieved successfully',
+      data: user,
     };
   }
 }
